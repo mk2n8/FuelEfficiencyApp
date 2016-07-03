@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MPG Calculator</title>
+  <meta charset="utf-8">
+  <meta name="description" content="MPG Calculator">
+  <meta name="author" content="MK">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>MPG Calculator</h1>
+    <h2>Shiny App Using Vehicle Weight as Predictor of Fuel Efficiency</h2>
+    <p>MK<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Background</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li><p>Data from mtcars show that vehicle weight is the number 1 predictor of fuel efficiency.</p></li>
+<li><p>Compared to all other potential predictors, the correlation between &#39;wt&#39; and &#39;mpg&#39; is the strongest at -0.86: </p></li>
+</ol>
+
+<pre><code>##         wt        cyl       disp         hp       carb       qsec 
+## -0.8676594 -0.8521620 -0.8475514 -0.7761684 -0.5509251  0.4186840 
+##       gear         am         vs       drat        mpg 
+##  0.4802848  0.5998324  0.6640389  0.6811719  1.0000000
+</code></pre>
+
+<ol>
+<li><p>A more detailed analysis is available on <a href="http://rpubs.com/mk2n8/fuel">RPubs</a>.</p></li>
+<li><p>The <a href="https://mk2n8.shinyapps.io/estimateMPG/">Shiny App</a> presented here uses a linear regression model to predict MPG based on vehicle weight.</p></li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>Building a Linear Regression Model</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Assuming a linear relationship between the dependent variable &#39;mpg&#39; and the independent variable &#39;wt,&#39; a  simple regression function would allow plugging in weight in tons to calculate a predicted mpg for a given vehicle:</p>
+
+<pre><code class="r">mpgPredict &lt;- function(weight) {
+        mtcarsWeight&lt;-mtcars$wt
+        mtcarsMPG&lt;-mtcars$mpg
+        lm1&lt;-lm(mtcarsMPG ~ mtcarsWeight)
+        coeffs = coefficients(lm1); coeffs
+        estimateMPG = coeffs[1] + coeffs[2]*weight
+        names(estimateMPG) &lt;- &quot;Miles Per Gallon&quot;
+        round(estimateMPG, digits = 1)
+}
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>Building the Shiny App: ui.R</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>The file ui.R creates: </p>
+
+<ol>
+<li><p>Basic page with the app title</p></li>
+<li><p>Space for entering a vehicle&#39;s weight in tons between 1 and 6 tons at 0.1 increments</p></li>
+<li><p>Space where the calculated mpg estimate is shown rounded to the nearest 0.1.</p></li>
+</ol>
+
+<pre><code class="r">mpgPredict &lt;- function(weight) {
+        mtcarsWeight&lt;-mtcars$wt
+        mtcarsMPG&lt;-mtcars$mpg
+        lm1&lt;-lm(mtcarsMPG ~ mtcarsWeight)
+        coeffs = coefficients(lm1); coeffs
+        estimateMPG = coeffs[1] + coeffs[2]*weight
+        names(estimateMPG) &lt;- &quot;Miles Per Gallon&quot;
+        round(estimateMPG, digits = 1)
+}
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>Building the Shiny App: server.r</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>The file server.r contains the function used to predict mpg based on weight and rendering instructions for the information on the web page:</p>
+
+<pre><code class="r">mpgPredict &lt;- function(weight) {
+        mtcarsWeight&lt;-mtcars$wt
+        mtcarsMPG&lt;-mtcars$mpg
+        lm1&lt;-lm(mtcarsMPG ~ mtcarsWeight)
+        coeffs = coefficients(lm1); coeffs
+        estimateMPG = coeffs[1] + coeffs[2]*weight
+        names(estimateMPG) &lt;- &quot;Miles Per Gallon&quot;
+        round(estimateMPG, digits = 1)
+}
+shinyServer(
+        function(input, output) {
+                output$inputValue &lt;- renderPrint({input$weight})
+                output$prediction &lt;- renderPrint({mpgPredict(input$weight)})
+        }
+)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Background'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Building a Linear Regression Model'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Building the Shiny App: ui.R'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Building the Shiny App: server.r'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
